@@ -31,6 +31,15 @@ namespace cnpy {
                 new std::vector<char>(num_vals * word_size));
         }
 
+        NpyArray(const std::vector<size_t>& _shape, size_t _word_size, bool _fortran_order, char _data_type) :
+            shape(_shape), word_size(_word_size), fortran_order(_fortran_order), data_type(_data_type) {
+
+            num_vals = 1;
+            for(size_t i = 0;i < shape.size();i++) num_vals *= shape[i];
+            data_holder = std::shared_ptr<std::vector<char>>(
+                new std::vector<char>(num_vals * word_size));
+        }
+
         NpyArray() : shape(0), word_size(0), fortran_order(0), num_vals(0) { }
 
         template<typename T>
@@ -58,6 +67,8 @@ namespace cnpy {
         size_t word_size;
         bool fortran_order;
         size_t num_vals;
+        char data_type;
+
     };
    
     using npz_t = std::map<std::string, NpyArray>; 
@@ -66,6 +77,9 @@ namespace cnpy {
     char map_type(const std::type_info& t);
     template<typename T> std::vector<char> create_npy_header(const std::vector<size_t>& shape);
     void parse_npy_header(FILE* fp,size_t& word_size, std::vector<size_t>& shape, bool& fortran_order);
+
+    void parse_npy_header(FILE* fp,size_t& word_size, std::vector<size_t>& shape, bool& fortran_order, char& data_type);
+
     void parse_npy_header(unsigned char* buffer,size_t& word_size, std::vector<size_t>& shape, bool& fortran_order);
     void parse_zip_footer(FILE* fp, uint16_t& nrecs, size_t& global_header_size, size_t& global_header_offset);
     npz_t npz_load(std::string fname);
