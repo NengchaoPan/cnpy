@@ -14,7 +14,7 @@
 
 char cnpy::BigEndianTest() {
     int x = 1;
-    return (((char *)&x)[0]) ? '<' : '>';
+    return ((reinterpret_cast<char *>(&x))[0]) ? '<' : '>';
 }
 
 char cnpy::map_type(const std::type_info& t)
@@ -61,8 +61,8 @@ template<> std::vector<char>& cnpy::operator+=(std::vector<char>& lhs, const cha
 
 void cnpy::parse_npy_header(unsigned char* buffer,size_t& word_size, std::vector<size_t>& shape, bool& fortran_order) {
     //std::string magic_string(buffer,6);
-    uint8_t major_version = *reinterpret_cast<uint8_t*>(buffer+6);
-    uint8_t minor_version = *reinterpret_cast<uint8_t*>(buffer+7);
+    //uint8_t major_version = *reinterpret_cast<uint8_t*>(buffer+6);
+    //uint8_t minor_version = *reinterpret_cast<uint8_t*>(buffer+7);
     uint16_t header_len = *reinterpret_cast<uint16_t*>(buffer+8);
     std::string header(reinterpret_cast<char*>(buffer+9),header_len);
 
@@ -93,7 +93,7 @@ void cnpy::parse_npy_header(unsigned char* buffer,size_t& word_size, std::vector
     bool littleEndian = (header[loc1] == '<' || header[loc1] == '|' ? true : false);
     assert(littleEndian);
 
-    char type = header[loc1+1];
+    //char type = header[loc1+1];
     //assert(type == map_type(T));
 
     std::string str_ws = header.substr(loc1+2);
@@ -209,6 +209,7 @@ void cnpy::parse_npy_header(FILE* fp, size_t& word_size, std::vector<size_t>& sh
 
 void cnpy::parse_zip_footer(FILE* fp, uint16_t& nrecs, size_t& global_header_size, size_t& global_header_offset)
 {
+#if 0
     std::vector<char> footer(22);
     fseek(fp,-22,SEEK_END);
     size_t res = fread(&footer[0],sizeof(char),22,fp);
@@ -228,6 +229,7 @@ void cnpy::parse_zip_footer(FILE* fp, uint16_t& nrecs, size_t& global_header_siz
     assert(disk_start == 0);
     assert(nrecs_on_disk == nrecs);
     assert(comment_len == 0);
+#endif
 }
 
 cnpy::NpyArray load_the_npy_file(FILE* fp) {
@@ -256,7 +258,7 @@ cnpy::NpyArray load_the_npz_array(FILE* fp, uint32_t compr_bytes, uint32_t uncom
     if(nread != compr_bytes)
         throw std::runtime_error("load_the_npy_file: failed fread");
 
-    int err;
+    //int err;
     z_stream d_stream;
 
     d_stream.zalloc = Z_NULL;
@@ -264,15 +266,18 @@ cnpy::NpyArray load_the_npz_array(FILE* fp, uint32_t compr_bytes, uint32_t uncom
     d_stream.opaque = Z_NULL;
     d_stream.avail_in = 0;
     d_stream.next_in = Z_NULL;
-    err = inflateInit2(&d_stream, -MAX_WBITS);
+    //err = inflateInit2(&d_stream, -MAX_WBITS);
+    inflateInit2(&d_stream, -MAX_WBITS);
 
     d_stream.avail_in = compr_bytes;
     d_stream.next_in = &buffer_compr[0];
     d_stream.avail_out = uncompr_bytes;
     d_stream.next_out = &buffer_uncompr[0];
 
-    err = inflate(&d_stream, Z_FINISH);
-    err = inflateEnd(&d_stream);
+    //err = inflate(&d_stream, Z_FINISH);
+    //err = inflateEnd(&d_stream);
+    inflate(&d_stream, Z_FINISH);
+    inflateEnd(&d_stream);
 
     std::vector<size_t> shape;
     size_t word_size;
@@ -296,6 +301,7 @@ cnpy::npz_t cnpy::npz_load(std::string fname) {
 
     cnpy::npz_t arrays;  
 
+#if 0
     while(1) {
         std::vector<char> local_header(30);
         size_t headerres = fread(&local_header[0],sizeof(char),30,fp);
@@ -333,10 +339,12 @@ cnpy::npz_t cnpy::npz_load(std::string fname) {
     }
 
     fclose(fp);
+#endif
     return arrays;  
 }
 
 cnpy::NpyArray cnpy::npz_load(std::string fname, std::string varname) {
+#if 0
     FILE* fp = fopen(fname.c_str(),"rb");
 
     if(!fp) throw std::runtime_error("npz_load: Unable to open file "+fname);
@@ -380,6 +388,7 @@ cnpy::NpyArray cnpy::npz_load(std::string fname, std::string varname) {
 
     fclose(fp);
 
+#endif
     //if we get here, we haven't found the variable in the file
     throw std::runtime_error("npz_load: Variable name "+varname+" not found in "+fname);
 }

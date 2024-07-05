@@ -16,11 +16,11 @@ namespace cnpy {
         data_type = arr.data_type;
         word_size = arr.word_size;
         shape.resize(arr.shape.size());
-        for (int i = 0; i < (int)shape.size(); i++) {
+        for (size_t i = 0; i < shape.size(); i++) {
             shape[i] = arr.shape[i];
         }
         num_vals = arr.num_vals;
-        char* p_buffer = (char*)malloc(sizeof(char) * word_size * num_vals);
+        char* p_buffer = static_cast<char*>(malloc(sizeof(char) * word_size * num_vals));
 
         char* buffer = p_buffer;
         char* buffer_ori = arr.data<char>();
